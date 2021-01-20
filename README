@@ -1,0 +1,88 @@
+# Use the Android Gradle Plugin offline
+
+This document describes how to use Android Studio with downloads of offline
+Android Gradle plugin and Google Maven repository dependencies.
+
+## Download and unzip offline components
+
+If you haven’t already done so, [download the offline
+components](https://d.android.com/r/studio-offline/downloads) from the official
+Android Studio website.
+
+After you have downloaded the offline components, unzip their contents into the
+following directory, which you might need to create if it doesn’t already exist:
+`%USER_HOME%/.android/manual-offline-m2/`.
+
+To update these components, simply re-download the offline components, unzip
+their contents into your `%USER_HOME%/.android/manual-offline-m2/` directory,
+and replace any files, as needed.
+
+## Include offline components in your Gradle project
+
+After you download and unzip the offline components, you need to create a script
+to tell Gradle to use include the offline components you downloaded when it
+searches for your project’s Android Gradle plugin and Google Maven dependencies.
+
+**Note:** This script applies to all Gradle projects you open on the workstation.
+
+To create the script, proceed as described below. Keep in mind, you need to
+create and save this script only once, even after updating your offline
+components.
+
+1. Create an empty text file with the following path and file name:
+   `%USER_HOME%/.gradle/init.d/offline.gradle`.
+2. Open the text file and include the following script:
+
+```
+def reposDir = new File(System.properties['user.home'], ".android/manual-offline-m2")
+def repos = new ArrayList()
+reposDir.eachDir {repos.add(it) }
+repos.sort()
+
+allprojects {
+  buildscript {
+    repositories {
+      for (repo in repos) {
+        maven {
+          name = "injected_offline_${repo.name}"
+          url = repo.toURI().toURL()
+        }
+      }
+    }
+  }
+  repositories {
+    for (repo in repos) {
+      maven {
+        name = "injected_offline_${repo.name}"
+        url = repo.toURI().toURL()
+      }
+    }
+  }
+}
+```
+
+3. Save the text file.
+4. (Optional) If you’d like to verify that the offline components are working as
+   intended, remove the online repositories from your project’s `build.gradle`
+   files, as shown below. After you’ve confirmed that your project builds
+   correctly without these repositories, you can put them back into your
+   `build.gradle` files.
+
+```
+buildscript {
+    repositories {
+        // Hide these repositories to test your build against
+        // the offline components. You can include them again after
+        // you’ve confirmed that your project builds ‘offline’.
+        // google()
+        // jcenter()
+    }
+    …
+}
+allprojects {
+    repositories {
+        // google()
+        // jcenter()
+    }
+    ...
+}
